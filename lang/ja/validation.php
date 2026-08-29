@@ -18,7 +18,7 @@ return [
         'string' => ':attributeは:min文字以上で入力してください。',
         'array' => ':attributeは:min個以上選択してください。',
     ],
-    'required' => ':attributeは必須です。',
+    'required' => ':attributeを入力してください。',
     'string' => ':attributeは文字列で入力してください。',
     'unique' => 'この:attributeはすでに使用されています。',
     'url' => ':attributeには有効なURLを入力してください。',
