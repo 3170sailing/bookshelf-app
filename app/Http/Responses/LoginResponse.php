@@ -13,7 +13,6 @@ class LoginResponse implements LoginResponseContract
         return $request->wantsJson()
             ? new JsonResponse('', 200)
             : redirect()
-                ->intended(Fortify::redirects('login'))
-                ->with('success', 'ログインしました');
+                ->intended(Fortify::redirects('login'));
     }
 }
