@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\GenreController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,6 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
     Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
     Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
+    Route::resource('genres', GenreController::class);
 });
 
 Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
@@ -32,8 +34,6 @@ Route::view('/ranking', 'ranking.index')->name('ranking.index');
 Route::get('/favorites', [FavoriteController::class, 'index'])
     ->middleware('auth')
     ->name('favorites.index');
-
-Route::view('/genres', 'genres.index')->name('genres.index');
 
 Route::post('/books/{book}/favorite', [FavoriteController::class, 'toggle'])
     ->middleware('auth')
