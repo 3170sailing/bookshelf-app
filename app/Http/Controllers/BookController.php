@@ -87,7 +87,7 @@ class BookController extends Controller
 
         return redirect()
             ->route('books.show', $book)
-            ->with('success', '書籍情報を更新しました。');
+            ->with('success', '書籍を編集しました。');
     }
 
     public function destroy(Book $book): RedirectResponse
