@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreBookRequest;
+use App\Http\Requests\UpdateBookRequest;
 use App\Http\Resources\BookResource;
 use App\Models\Book;
 
@@ -47,5 +49,58 @@ class BookController extends Controller
         $book->loadCount('reviews');
 
         return new BookResource($book);
+    }
+
+    public function store(StoreBookRequest $request)
+    {
+        $validated = $request->validated();
+
+        $book = Book::create([
+            'title' => $validated['title'],
+            'author' => $validated['author'],
+            'isbn' => $validated['isbn'],
+            'published_date' => $validated['published_date'],
+            'description' => $validated['description'] ?? null,
+            'image_url' => $validated['image_url'] ?? null,
+        ]);
+
+        $book->genres()->sync($validated['genres']);
+
+        $book->load('genres');
+        $book->loadAvg('reviews', 'rating');
+        $book->loadCount('reviews');
+
+        return (new BookResource($book))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    public function update(UpdateBookRequest $request, Book $book): BookResource
+    {
+        $validated = $request->validated();
+
+        $book->update([
+            'title' => $validated['title'],
+            'author' => $validated['author'],
+            'isbn' => $validated['isbn'],
+            'published_date' => $validated['published_date'],
+            'description' => $validated['description'] ?? null,
+            'image_url' => $validated['image_url'] ?? null,
+        ]);
+
+        $book->genres()->sync($validated['genres']);
+
+        $book->load('genres');
+        $book->loadAvg('reviews', 'rating');
+        $book->loadCount('reviews');
+
+        return new BookResource($book);
+    }
+
+    public function destroy(Book $book)
+    {
+        $book->delete();
+
+        return response()->json(null, 204);
     }
 }
