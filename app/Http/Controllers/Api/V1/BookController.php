@@ -7,6 +7,7 @@ use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Http\Resources\BookResource;
 use App\Models\Book;
+use App\Models\User;
 
 class BookController extends Controller
 {
@@ -33,7 +34,7 @@ class BookController extends Controller
             });
         }
 
-        $books = $query->paginate(10);
+        $books = $query->paginate(20);
 
         return BookResource::collection($books);
     }
@@ -55,7 +56,10 @@ class BookController extends Controller
     {
         $validated = $request->validated();
 
+        $user = User::first();
+
         $book = Book::create([
+            'user_id' => $user->id,
             'title' => $validated['title'],
             'author' => $validated['author'],
             'isbn' => $validated['isbn'],

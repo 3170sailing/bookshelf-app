@@ -39,6 +39,45 @@ class BookApiTest extends TestCase
             ->assertJsonPath('data.0.reviews_count', 1);
     }
 
+    public function test_book_list_paginates_twenty_books_per_page(): void
+    {
+        Book::factory()->count(21)->create();
+
+        $response = $this->getJson('/api/v1/books');
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(20, 'data')
+            ->assertJsonPath('meta.per_page', 20)
+            ->assertJsonPath('meta.total', 21);
+    }
+
+    public function test_book_list_returns_average_rating_rounded_to_one_decimal_place(): void
+    {
+        $book = Book::factory()->create();
+
+        Review::factory()->create([
+            'book_id' => $book->id,
+            'rating' => 4,
+        ]);
+
+        Review::factory()->create([
+            'book_id' => $book->id,
+            'rating' => 3,
+        ]);
+
+        Review::factory()->create([
+            'book_id' => $book->id,
+            'rating' => 3,
+        ]);
+
+        $response = $this->getJson('/api/v1/books');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.0.average_rating', 3.3);
+    }
+
     public function test_can_get_book_detail_with_reviews(): void
     {
         $book = Book::factory()->create([
@@ -82,6 +121,7 @@ class BookApiTest extends TestCase
 
     public function test_can_create_book_without_authentication(): void
     {
+        $user = User::factory()->create();
         $genres = Genre::factory()->count(2)->create();
 
         $response = $this->postJson('/api/v1/books', [

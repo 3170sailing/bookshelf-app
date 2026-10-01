@@ -118,6 +118,37 @@ class ReviewTest extends TestCase
         ]);
     }
 
+    public function test_review_creation_requires_comment(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post("/books/{$book->id}/reviews", [
+                'rating' => 5,
+            ]);
+
+        $response->assertSessionHasErrors('comment');
+
+        $this->assertDatabaseCount('reviews', 0);
+    }
+
+    public function test_review_creation_comment_must_not_exceed_1000_characters(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post("/books/{$book->id}/reviews", [
+                'rating' => 5,
+                'comment' => str_repeat('あ', 1001),
+            ]);
+
+        $response->assertSessionHasErrors('comment');
+
+        $this->assertDatabaseCount('reviews', 0);
+    }
+
     public function test_other_user_cannot_update_review(): void
     {
         $owner = User::factory()->create();

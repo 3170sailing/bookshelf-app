@@ -51,18 +51,23 @@ class RankingTest extends TestCase
             ]);
     }
 
-    public function test_ranking_does_not_display_books_without_reviews(): void
+    public function test_ranking_prioritizes_review_count_when_average_rating_is_equal(): void
     {
-        $bookWithReview = Book::factory()->create([
-            'title' => 'レビューありの本',
+        $manyReviewsBook = Book::factory()->create([
+            'title' => 'レビュー件数が多い本',
         ]);
 
-        $bookWithoutReview = Book::factory()->create([
-            'title' => 'レビューなしの本',
+        $fewReviewsBook = Book::factory()->create([
+            'title' => 'レビュー件数が少ない本',
+        ]);
+
+        Review::factory()->count(3)->create([
+            'book_id' => $manyReviewsBook->id,
+            'rating' => 5,
         ]);
 
         Review::factory()->create([
-            'book_id' => $bookWithReview->id,
+            'book_id' => $fewReviewsBook->id,
             'rating' => 5,
         ]);
 
@@ -70,9 +75,34 @@ class RankingTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('レビューありの本')
-            ->assertDontSee('レビューなしの本');
+            ->assertSeeInOrder([
+                'レビュー件数が多い本',
+                'レビュー件数が少ない本',
+            ]);
     }
+
+        public function test_ranking_does_not_display_books_without_reviews(): void
+        {
+            $bookWithReview = Book::factory()->create([
+                'title' => 'レビューありの本',
+            ]);
+
+            $bookWithoutReview = Book::factory()->create([
+                'title' => 'レビューなしの本',
+            ]);
+
+            Review::factory()->create([
+                'book_id' => $bookWithReview->id,
+                'rating' => 5,
+            ]);
+
+            $response = $this->get('/ranking');
+
+            $response
+                ->assertOk()
+                ->assertSee('レビューありの本')
+                ->assertDontSee('レビューなしの本');
+        }
 
     public function test_ranking_displays_maximum_of_ten_books(): void
     {

@@ -12,11 +12,12 @@ class FavoriteLikeTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_authenticated_user_can_add_book_to_favorites(): void
+    public function test_authenticated_user_can_toggle_book_favorite(): void
     {
         $user = User::factory()->create();
         $book = Book::factory()->create();
 
+        // 追加
         $response = $this->actingAs($user)
             ->post("/books/{$book->id}/favorite");
 
@@ -26,21 +27,25 @@ class FavoriteLikeTest extends TestCase
             'user_id' => $user->id,
             'book_id' => $book->id,
         ]);
-    }
 
-    public function test_authenticated_user_can_remove_book_from_favorites(): void
-    {
-        $user = User::factory()->create();
-        $book = Book::factory()->create();
-
-        $user->favoriteBooks()->attach($book->id);
-
+        // 解除
         $response = $this->actingAs($user)
             ->post("/books/{$book->id}/favorite");
 
         $response->assertRedirect();
 
         $this->assertDatabaseMissing('favorites', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+
+        // 再追加
+        $response = $this->actingAs($user)
+            ->post("/books/{$book->id}/favorite");
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('favorites', [
             'user_id' => $user->id,
             'book_id' => $book->id,
         ]);
@@ -57,11 +62,12 @@ class FavoriteLikeTest extends TestCase
         $this->assertDatabaseCount('favorites', 0);
     }
 
-    public function test_authenticated_user_can_like_review(): void
+    public function test_authenticated_user_can_toggle_review_like(): void
     {
         $user = User::factory()->create();
         $review = Review::factory()->create();
 
+        // 追加
         $response = $this->actingAs($user)
             ->post("/reviews/{$review->id}/like");
 
@@ -73,15 +79,8 @@ class FavoriteLikeTest extends TestCase
             'user_id' => $user->id,
             'review_id' => $review->id,
         ]);
-    }
 
-    public function test_authenticated_user_can_remove_like_from_review(): void
-    {
-        $user = User::factory()->create();
-        $review = Review::factory()->create();
-
-        $user->likedReviews()->attach($review->id);
-
+        // 解除
         $response = $this->actingAs($user)
             ->post("/reviews/{$review->id}/like");
 
@@ -90,6 +89,19 @@ class FavoriteLikeTest extends TestCase
         );
 
         $this->assertDatabaseMissing('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+
+        // 再追加
+        $response = $this->actingAs($user)
+            ->post("/reviews/{$review->id}/like");
+
+        $response->assertRedirect(
+            route('books.show', $review->book)
+        );
+
+        $this->assertDatabaseHas('review_likes', [
             'user_id' => $user->id,
             'review_id' => $review->id,
         ]);

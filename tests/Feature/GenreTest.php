@@ -42,12 +42,12 @@ class GenreTest extends TestCase
         $this->assertDatabaseCount('genres', 0);
     }
 
-    public function test_genre_name_must_not_exceed_50_characters(): void
+    public function test_genre_name_must_not_exceed_255_characters(): void
     {
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->post('/genres', [
-            'name' => str_repeat('あ', 51),
+            'name' => str_repeat('あ', 256),
         ]);
 
         $response->assertSessionHasErrors('name');
