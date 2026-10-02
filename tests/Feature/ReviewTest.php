@@ -133,6 +133,31 @@ class ReviewTest extends TestCase
         $this->assertDatabaseCount('reviews', 0);
     }
 
+    public function test_review_creation_allows_comment_with_1000_characters(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        $comment = str_repeat('あ', 1000);
+
+        $response = $this->actingAs($user)
+            ->post("/books/{$book->id}/reviews", [
+                'rating' => 5,
+                'comment' => $comment,
+            ]);
+
+        $response
+            ->assertRedirect(route('books.show', $book))
+            ->assertSessionDoesntHaveErrors('comment');
+
+        $this->assertDatabaseHas('reviews', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'rating' => 5,
+            'comment' => $comment,
+        ]);
+    }
+
     public function test_review_creation_comment_must_not_exceed_1000_characters(): void
     {
         $user = User::factory()->create();
