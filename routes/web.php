@@ -5,6 +5,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\RankingController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,6 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/reviews/{review}/like', [ReviewController::class, 'toggleLike'])->name('reviews.like');
 
     Route::resource('genres', GenreController::class);
+
+    Route::get('/reports', [ReportController::class, 'index'])
+    ->name('reports.index');
 });
 
 Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
