@@ -14,15 +14,15 @@ class UpdateReadingPlanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'target_date' => ['required', 'date'],
+            'target_date' => ['required', 'date', 'after_or_equal:today'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'target_date.required' => '期日を入力してください。',
-            'target_date.date' => '期日は有効な日付を入力してください。',
+            'target_date.required' => '期日は必須です。',
+            'target_date.date' => '期日は有効な日付形式で入力してください。',
         ];
     }
 }

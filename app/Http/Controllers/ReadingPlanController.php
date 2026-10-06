@@ -62,7 +62,7 @@ class ReadingPlanController extends Controller
 
         return redirect()
             ->route('reading-plans.index')
-            ->with('success', '読書計画を登録しました');
+            ->with('success', '読書計画を作成しました。');
     }
 
     public function edit(ReadingPlan $readingPlan)
@@ -86,7 +86,7 @@ class ReadingPlanController extends Controller
 
         return redirect()
             ->route('reading-plans.index')
-            ->with('success', '読書計画を更新しました');
+            ->with('success', '読書計画を更新しました。');
     }
 
     public function destroy(ReadingPlan $readingPlan)
@@ -97,7 +97,7 @@ class ReadingPlanController extends Controller
 
         return redirect()
             ->route('reading-plans.index')
-            ->with('success', '読書計画を削除しました');
+            ->with('success', '読書計画を削除しました。');
     }
     public function complete(ReadingPlan $readingPlan)
 {
@@ -110,6 +110,6 @@ class ReadingPlanController extends Controller
 
     return redirect()
         ->route('reading-plans.index')
-        ->with('success', '読了しました');
+        ->with('success', '読書計画を完了しました。');
 }
 }
