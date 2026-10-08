@@ -19,7 +19,7 @@ class ProcessReadingPlanReminders extends Command
         $today = Carbon::today();
 
         $readingPlans = ReadingPlan::with(['user', 'book'])
-            ->where('status', ReadingPlanStatus::InProgress)
+            ->where('status', '!=', ReadingPlanStatus::Completed->value)
             ->get();
 
         $readingPlans->each(function (ReadingPlan $readingPlan) use ($today): void {
@@ -38,7 +38,7 @@ class ProcessReadingPlanReminders extends Command
                 $readingPlan->user->notify(
                     new ReadingPlanReminderNotification(
                         $readingPlan,
-                        'due_today'
+                        'on_due_date'
                     )
                 );
             }
