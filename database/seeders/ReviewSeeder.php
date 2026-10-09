@@ -66,9 +66,9 @@ class ReviewSeeder extends Seeder
             [4, 10, 4, '普段意識しないコンテナの重要性が分かりました。'],
         ];
 
-        foreach ($reviews as [$userIndex, $bookIndex, $rating, $comment]) {
+        foreach ($reviews as [, $bookIndex, $rating, $comment]) {
             Review::create([
-                'user_id' => $users[$userIndex]->id,
+                'user_id' => $users->random()->id,
                 'book_id' => $books[$bookIndex]->id,
                 'rating' => $rating,
                 'comment' => $comment,
