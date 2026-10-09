@@ -81,28 +81,28 @@ class RankingTest extends TestCase
             ]);
     }
 
-        public function test_ranking_does_not_display_books_without_reviews(): void
-        {
-            $bookWithReview = Book::factory()->create([
-                'title' => 'レビューありの本',
-            ]);
+    public function test_ranking_does_not_display_books_without_reviews(): void
+    {
+        $bookWithReview = Book::factory()->create([
+            'title' => 'レビューありの本',
+        ]);
 
-            $bookWithoutReview = Book::factory()->create([
-                'title' => 'レビューなしの本',
-            ]);
+        $bookWithoutReview = Book::factory()->create([
+            'title' => 'レビューなしの本',
+        ]);
 
-            Review::factory()->create([
-                'book_id' => $bookWithReview->id,
-                'rating' => 5,
-            ]);
+        Review::factory()->create([
+            'book_id' => $bookWithReview->id,
+            'rating' => 5,
+        ]);
 
-            $response = $this->get('/ranking');
+        $response = $this->get('/ranking');
 
-            $response
-                ->assertOk()
-                ->assertSee('レビューありの本')
-                ->assertDontSee('レビューなしの本');
-        }
+        $response
+            ->assertOk()
+            ->assertSee('レビューありの本')
+            ->assertDontSee('レビューなしの本');
+    }
 
     public function test_ranking_displays_maximum_of_ten_books(): void
     {

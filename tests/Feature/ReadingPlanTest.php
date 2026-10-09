@@ -6,6 +6,7 @@ use App\Enums\ReadingPlanStatus;
 use App\Models\Book;
 use App\Models\ReadingPlan;
 use App\Models\User;
+use App\Notifications\ReadingPlanReminderNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -104,7 +105,9 @@ class ReadingPlanTest extends TestCase
             'target_date' => now()->subDay()->format('Y-m-d'),
         ]);
 
-        $response->assertSessionHasErrors('target_date');
+        $response->assertSessionHasErrors([
+            'target_date' => '期日は今日以降の日付を指定してください。',
+        ]);
 
         $this->assertDatabaseMissing('reading_plans', [
             'user_id' => $user->id,
@@ -264,5 +267,112 @@ class ReadingPlanTest extends TestCase
         );
 
         $this->assertNull($readingPlan->completed_at);
+    }
+
+    public function test_同じ書籍に進行中の読書計画がある場合は新しく作成できない(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        ReadingPlan::create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'target_date' => now()->addWeek(),
+            'status' => ReadingPlanStatus::InProgress,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->post(route('reading-plans.store'), [
+                'book_id' => $book->id,
+                'target_date' => now()->addWeeks(2)->toDateString(),
+            ]);
+
+        $response
+            ->assertSessionHasErrors([
+                'book_id' => 'この書籍は既に進行中の読書計画が存在します。',
+            ]);
+
+        $this->assertDatabaseCount('reading_plans', 1);
+    }
+
+    public function test_期限切れの読書計画の期日を変更すると進行中に戻る(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        $readingPlan = ReadingPlan::create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'target_date' => now()->subDay(),
+            'status' => ReadingPlanStatus::Expired,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->put(route('reading-plans.update', $readingPlan), [
+                'target_date' => now()->addWeek()->toDateString(),
+            ]);
+
+        $response
+            ->assertRedirect(route('reading-plans.index'))
+            ->assertSessionHas('success', '読書計画を更新しました。');
+
+        $readingPlan->refresh();
+
+        $this->assertSame(
+            ReadingPlanStatus::InProgress,
+            $readingPlan->status
+        );
+    }
+
+    public function test_読了済みの読書計画は編集できない(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        $readingPlan = ReadingPlan::create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'target_date' => now()->subWeek(),
+            'status' => ReadingPlanStatus::Completed,
+            'completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('reading-plans.edit', $readingPlan));
+
+        $response->assertForbidden();
+    }
+
+    public function test_読書計画を削除すると関連するリマインダー通知も削除される(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+
+        $readingPlan = ReadingPlan::create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'target_date' => now()->addDays(3),
+            'status' => ReadingPlanStatus::InProgress,
+        ]);
+
+        $user->notify(
+            new ReadingPlanReminderNotification(
+                $readingPlan,
+                'three_days_before'
+            )
+        );
+
+        $this->assertCount(1, $user->notifications);
+
+        $response = $this->actingAs($user)
+            ->delete(route('reading-plans.destroy', $readingPlan));
+
+        $response->assertRedirect(route('reading-plans.index'));
+
+        $this->assertDatabaseMissing('reading_plans', [
+            'id' => $readingPlan->id,
+        ]);
+
+        $this->assertDatabaseCount('notifications', 0);
     }
 }
