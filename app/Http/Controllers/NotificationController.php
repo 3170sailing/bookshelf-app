@@ -13,7 +13,7 @@ class NotificationController extends Controller
         $notifications = $request->user()
             ->notifications()
             ->latest()
-            ->paginate(10);
+            ->paginate(20);
 
         return view('notifications.index', compact('notifications'));
     }
@@ -26,6 +26,6 @@ class NotificationController extends Controller
 
         $notification->markAsRead();
 
-        return back();
+        return back()->with('success', '通知を既読にしました。');
     }
 }
