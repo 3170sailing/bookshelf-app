@@ -16,7 +16,8 @@ class BookController extends Controller
     public function index(Request $request): View
     {
         $query = Book::with('genres')
-            ->withAvg('reviews', 'rating');
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews');
 
         if ($request->filled('keyword')) {
             $keyword = $request->input('keyword');
@@ -35,7 +36,10 @@ class BookController extends Controller
 
         match ($request->input('sort', 'newest')) {
             'oldest' => $query->oldest(),
-            'rating' => $query->orderByDesc('reviews_avg_rating'),
+            'rating' => $query
+                ->orderByRaw('reviews_avg_rating IS NULL')
+                ->orderByDesc('reviews_avg_rating')
+                ->orderByDesc('reviews_count'),
             'title' => $query->orderBy('title'),
             default => $query->latest(),
         };
@@ -63,8 +67,8 @@ class BookController extends Controller
         $book = Book::create([
             'title' => $validated['title'],
             'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
+            'isbn' => $validated['isbn'] ?? null,
+            'published_date' => $validated['published_date'] ?? null,
             'description' => $validated['description'] ?? null,
             'image_url' => $validated['image_url'] ?? null,
             'user_id' => Auth::id(),
