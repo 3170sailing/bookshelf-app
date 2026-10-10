@@ -3,38 +3,44 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\IndexBookRequest;
 use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Http\Resources\BookResource;
 use App\Models\Book;
-use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
-    public function index()
+    public function index(IndexBookRequest $request): AnonymousResourceCollection
     {
         $query = Book::with('genres')
             ->withAvg('reviews', 'rating')
             ->withCount('reviews');
 
-        if (request()->filled('keyword')) {
-            $keyword = request('keyword');
+        if ($request->filled('keyword')) {
+            $keyword = $request->input('keyword');
 
-            $query->where(function ($q) use ($keyword) {
-                $q->where('title', 'like', "%{$keyword}%")
+            $query->where(function ($query) use ($keyword): void {
+                $query->where('title', 'like', "%{$keyword}%")
                     ->orWhere('author', 'like', "%{$keyword}%");
             });
         }
 
-        if (request()->filled('genre_id')) {
-            $genreId = request('genre_id');
+        if ($request->filled('genre_id')) {
+            $genreId = $request->input('genre_id');
 
-            $query->whereHas('genres', function ($q) use ($genreId) {
-                $q->where('genres.id', $genreId);
+            $query->whereHas('genres', function ($query) use ($genreId): void {
+                $query->where('genres.id', $genreId);
             });
         }
 
-        $books = $query->paginate(20);
+        $books = $query->paginate(
+            $request->integer('per_page', 20)
+        );
 
         return BookResource::collection($books);
     }
@@ -52,23 +58,25 @@ class BookController extends Controller
         return new BookResource($book);
     }
 
-    public function store(StoreBookRequest $request)
+    public function store(StoreBookRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        $user = User::first();
+        $book = DB::transaction(function () use ($request, $validated): Book {
+            $book = Book::create([
+                'user_id' => $request->user()->id,
+                'title' => $validated['title'],
+                'author' => $validated['author'],
+                'isbn' => $validated['isbn'] ?? null,
+                'published_date' => $validated['published_date'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'image_url' => $validated['image_url'] ?? null,
+            ]);
 
-        $book = Book::create([
-            'user_id' => $user->id,
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-        ]);
+            $book->genres()->sync($validated['genres']);
 
-        $book->genres()->sync($validated['genres']);
+            return $book;
+        });
 
         $book->load('genres');
         $book->loadAvg('reviews', 'rating');
@@ -81,18 +89,22 @@ class BookController extends Controller
 
     public function update(UpdateBookRequest $request, Book $book): BookResource
     {
+        $this->authorize('update', $book);
+
         $validated = $request->validated();
 
-        $book->update([
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-        ]);
+        DB::transaction(function () use ($book, $validated): void {
+            $book->update([
+                'title' => $validated['title'],
+                'author' => $validated['author'],
+                'isbn' => $validated['isbn'] ?? null,
+                'published_date' => $validated['published_date'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'image_url' => $validated['image_url'] ?? null,
+            ]);
 
-        $book->genres()->sync($validated['genres']);
+            $book->genres()->sync($validated['genres']);
+        });
 
         $book->load('genres');
         $book->loadAvg('reviews', 'rating');
@@ -101,10 +113,12 @@ class BookController extends Controller
         return new BookResource($book);
     }
 
-    public function destroy(Book $book)
+    public function destroy(Book $book): Response
     {
+        $this->authorize('delete', $book);
+
         $book->delete();
 
-        return response()->json(null, 204);
+        return response()->noContent();
     }
 }

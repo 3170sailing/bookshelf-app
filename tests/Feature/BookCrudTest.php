@@ -52,8 +52,6 @@ class BookCrudTest extends TestCase
             ->assertSessionHasErrors([
                 'title',
                 'author',
-                'isbn',
-                'published_date',
                 'genres',
             ]);
 
