@@ -6,9 +6,11 @@ use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Genre;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
 class BookController extends Controller
@@ -122,6 +124,66 @@ class BookController extends Controller
         return redirect()
             ->route('books.show', $book)
             ->with('success', '書籍を編集しました。');
+    }
+
+    public function searchByIsbn(string $isbn): JsonResponse
+    {
+        if (! preg_match('/^\d{13}$/', $isbn)) {
+            return response()->json([
+                'error' => 'ISBNは13桁で入力してください。',
+            ], 400);
+        }
+
+        try {
+            $apiKey = config('services.google_books.key');
+
+            $query = [
+                'q' => 'isbn:'.$isbn,
+            ];
+
+            if ($apiKey) {
+                $query['key'] = $apiKey;
+            }
+
+            $response = Http::get(
+                'https://www.googleapis.com/books/v1/volumes',
+                $query
+            );
+
+            if ($response->status() === 429) {
+                return response()->json([
+                    'error' => 'Google Books API のクォータを超過しました。.env に GOOGLE_BOOKS_API_KEY を設定してください。',
+                ], 429);
+            }
+
+            if ($response->failed()) {
+                return response()->json([
+                    'error' => 'API通信エラーが発生しました。',
+                ], 500);
+            }
+
+            $data = $response->json();
+
+            if (($data['totalItems'] ?? 0) === 0 || empty($data['items'])) {
+                return response()->json([
+                    'error' => '書籍が見つかりませんでした。',
+                ], 404);
+            }
+
+            $volumeInfo = $data['items'][0]['volumeInfo'] ?? [];
+
+            return response()->json([
+                'title' => $volumeInfo['title'] ?? '',
+                'author' => $volumeInfo['authors'][0] ?? '',
+                'published_date' => $volumeInfo['publishedDate'] ?? '',
+                'description' => $volumeInfo['description'] ?? '',
+                'image_url' => $volumeInfo['imageLinks']['thumbnail'] ?? '',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'API通信エラーが発生しました。',
+            ], 500);
+        }
     }
 
     public function destroy(Book $book): RedirectResponse
