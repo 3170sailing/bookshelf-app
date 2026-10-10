@@ -52,7 +52,10 @@ class ReportController extends Controller
                     'average_rating' => $reviews->avg('rating'),
                 ];
             })
-            ->sortByDesc('average_rating')
+            ->sort(function (array $a, array $b): int {
+                return [$b['average_rating'], $b['count']]
+                    <=> [$a['average_rating'], $a['count']];
+            })
             ->take(5)
             ->values();
 
