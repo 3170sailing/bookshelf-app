@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
+    /**
+     * 認証ユーザーのレビューを集計し、読書レポートを表示する。
+     */
     public function index(Request $request): View
     {
         $reviews = Review::with('book.genres')

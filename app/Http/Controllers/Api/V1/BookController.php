@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
+    /**
+     * 書籍一覧を検索条件付きで取得する。
+     */
     public function index(IndexBookRequest $request): AnonymousResourceCollection
     {
         $query = Book::with('genres')
@@ -58,6 +61,9 @@ class BookController extends Controller
         return new BookResource($book);
     }
 
+    /**
+     * 認証ユーザーの書籍を登録する。
+     */
     public function store(StoreBookRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -87,6 +93,9 @@ class BookController extends Controller
             ->setStatusCode(201);
     }
 
+    /**
+     * 所有する書籍情報を更新する。
+     */
     public function update(UpdateBookRequest $request, Book $book): BookResource
     {
         $this->authorize('update', $book);
@@ -113,6 +122,9 @@ class BookController extends Controller
         return new BookResource($book);
     }
 
+    /**
+     * 所有する書籍を削除する。
+     */
     public function destroy(Book $book): Response
     {
         $this->authorize('delete', $book);

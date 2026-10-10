@@ -14,6 +14,9 @@ class ProcessReadingPlanReminders extends Command
 
     protected $description = '読書計画の期限更新とリマインダー通知を処理する';
 
+    /**
+     * 読書計画の期限状態を更新し、対象日にリマインダー通知を送信する。
+     */
     public function handle(): int
     {
         $today = Carbon::today();

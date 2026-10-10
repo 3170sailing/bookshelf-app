@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
@@ -66,17 +67,21 @@ class BookController extends Controller
     {
         $validated = $request->validated();
 
-        $book = Book::create([
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'] ?? null,
-            'published_date' => $validated['published_date'] ?? null,
-            'description' => $validated['description'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-            'user_id' => Auth::id(),
-        ]);
+        $book = DB::transaction(function () use ($validated): Book {
+            $book = Book::create([
+                'title' => $validated['title'],
+                'author' => $validated['author'],
+                'isbn' => $validated['isbn'] ?? null,
+                'published_date' => $validated['published_date'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'image_url' => $validated['image_url'] ?? null,
+                'user_id' => Auth::id(),
+            ]);
 
-        $book->genres()->sync($validated['genres']);
+            $book->genres()->sync($validated['genres']);
+
+            return $book;
+        });
 
         return redirect()
             ->route('books.show', $book)
@@ -110,22 +115,27 @@ class BookController extends Controller
 
         $validated = $request->validated();
 
-        $book->update([
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'published_date' => $validated['published_date'],
-            'description' => $validated['description'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-        ]);
+        DB::transaction(function () use ($book, $validated): void {
+            $book->update([
+                'title' => $validated['title'],
+                'author' => $validated['author'],
+                'isbn' => $validated['isbn'] ?? null,
+                'published_date' => $validated['published_date'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'image_url' => $validated['image_url'] ?? null,
+            ]);
 
-        $book->genres()->sync($validated['genres']);
+            $book->genres()->sync($validated['genres']);
+        });
 
         return redirect()
             ->route('books.show', $book)
             ->with('success', '書籍を編集しました。');
     }
 
+    /**
+     * ISBNからGoogle Books APIを利用して書籍情報を取得する。
+     */
     public function searchByIsbn(string $isbn): JsonResponse
     {
         if (! preg_match('/^\d{13}$/', $isbn)) {
