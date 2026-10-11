@@ -158,9 +158,6 @@ Laravel Sanctumを利用したREST APIを実装しています。
 | email | varchar(255) |  | ◯ | ◯ |  |
 | email_verified_at | timestamp |  |  |  |  |
 | password | varchar(255) |  |  | ◯ |  |
-| two_factor_secret | text |  |  |  |  |
-| two_factor_recovery_codes | text |  |  |  |  |
-| two_factor_confirmed_at | timestamp |  |  |  |  |
 | remember_token | varchar(100) |  |  |  |  |
 | created_at | timestamp |  |  |  |  |
 | updated_at | timestamp |  |  |  |  |
@@ -259,32 +256,32 @@ Laravel Sanctumを利用したREST APIを実装しています。
 
 ### テストユーザー1
 
-name: 山田太郎  
-email: yamada@example.com  
+name: 山田太郎
+email: yamada@example.com
 password: password
 
 ### テストユーザー2
 
-name: 鈴木花子  
-email: suzuki@example.com  
+name: 鈴木花子
+email: suzuki@example.com
 password: password
 
 ### テストユーザー3
 
-name: 田中一郎  
-email: tanaka@example.com  
+name: 田中一郎
+email: tanaka@example.com
 password: password
 
 ### テストユーザー4
 
-name: 佐藤美咲  
-email: sato@example.com  
+name: 佐藤美咲
+email: sato@example.com
 password: password
 
 ### テストユーザー5
 
-name: 高橋健太  
-email: takahashi@example.com  
+name: 高橋健太
+email: takahashi@example.com
 password: password
 
 ## PHPUnitを利用したテストに関して
